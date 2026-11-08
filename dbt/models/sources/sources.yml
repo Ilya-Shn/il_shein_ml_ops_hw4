@@ -1,0 +1,60 @@
+version: 2
+sources:
+- name: transactions_db
+  schema: transactions_db
+  description: Исходные CSV соревнования teta-ml-1-2025 из HW2. Test без меток.
+  tables:
+  - name: transactions
+    description: Все исходные поля; загрузчик добавляет идентификатор строки.
+    columns:
+    - name: transaction_id
+      description: SHA-256 файла и номер строки.
+      data_tests:
+      - not_null
+      - unique
+    - name: transaction_time
+      description: Время CSV в UTC.
+      data_tests: &id001
+      - not_null
+    - name: target
+      description: 0/1 для train; NULL для test.
+      data_tests:
+      - accepted_values:
+          arguments:
+            values:
+            - 0
+            - 1
+            quote: false
+    - name: amount
+      description: Сумма в денежных единицах датасета.
+      data_tests: *id001
+    - name: merch
+      description: Название мерчанта.
+    - name: cat_id
+      description: Категория транзакции, в данных 14 значений.
+    - name: name_1
+      description: Имя клиента.
+    - name: name_2
+      description: Фамилия клиента.
+    - name: gender
+      description: 'Пол клиента: M/F.'
+    - name: street
+      description: Улица клиента.
+    - name: one_city
+      description: Город клиента.
+    - name: us_state
+      description: Код штата США или DC.
+    - name: post_code
+      description: Почтовый индекс как строка.
+    - name: lat
+      description: Широта клиента.
+    - name: lon
+      description: Долгота клиента.
+    - name: population_city
+      description: Население города.
+    - name: jobs
+      description: Профессия клиента.
+    - name: merchant_lat
+      description: Широта мерчанта.
+    - name: merchant_lon
+      description: Долгота мерчанта.

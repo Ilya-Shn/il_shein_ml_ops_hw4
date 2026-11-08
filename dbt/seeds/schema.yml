@@ -1,0 +1,10 @@
+version: 2
+seeds:
+- name: states
+  description: 50 штатов США и федеральный округ DC.
+  columns:
+  - name: state
+    description: Двухбуквенный код.
+    data_tests:
+    - not_null
+    - unique

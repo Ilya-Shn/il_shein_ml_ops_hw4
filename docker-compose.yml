@@ -1,0 +1,31 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8.4.13
+    environment:
+      CLICKHOUSE_USER: fraud
+      CLICKHOUSE_PASSWORD: fraud
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: [CMD, clickhouse-client, --user, fraud, --password, fraud, --query, SELECT 1]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+  dbt:
+    build: .
+    working_dir: /work/dbt
+    volumes:
+      - .:/work
+    ports:
+      - '127.0.0.1:8084:8080'
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    profiles: [tools]
+volumes:
+  clickhouse-data:

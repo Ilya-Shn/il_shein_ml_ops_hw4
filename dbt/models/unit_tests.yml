@@ -1,0 +1,52 @@
+version: 2
+unit_tests:
+  - name: staging_normalization_and_buckets
+    description: Нормализация и границы 100/1000, ISO день недели и неизвестный target.
+    model: stg_transactions
+    given:
+      - input: source('transactions_db', 'transactions')
+        rows:
+          - {transaction_id: a, transaction_time: '2020-01-05 23:00:00', merch: ' shop ', cat_id: ' FOOD ', amount: 99.99, name_1: Ivan, name_2: Petrov, gender: ' m ', street: Main, post_code: '10001', us_state: ' ny ', lat: 40, lon: -74, merchant_lat: 40, merchant_lon: -74, target: 0}
+          - {transaction_id: b, transaction_time: '2020-01-06 00:00:00', merch: shop, cat_id: food, amount: 100, name_1: Ivan, name_2: Petrov, gender: M, street: Main, post_code: '10001', us_state: NY, lat: 40, lon: -74, merchant_lat: 40, merchant_lon: -74, target: 1}
+          - {transaction_id: c, transaction_time: '2020-01-06 01:00:00', merch: shop, cat_id: food, amount: 999.99, name_1: Ivan, name_2: Petrov, gender: M, street: Main, post_code: '10001', us_state: NY, lat: 40, lon: -74, merchant_lat: 40, merchant_lon: -74, target: null}
+          - {transaction_id: d, transaction_time: '2020-01-06 02:00:00', merch: shop, cat_id: food, amount: 1000, name_1: Ivan, name_2: Petrov, gender: M, street: Main, post_code: '10001', us_state: NY, lat: 40, lon: -74, merchant_lat: 40, merchant_lon: -74, target: 0}
+    expect:
+      rows:
+        - {transaction_id: a, merchant: shop, category: food, state: NY, gender: M, amount_bucket: SMALL, day_of_week: 7, transaction_hour: 23, is_fraud: 0}
+        - {transaction_id: b, merchant: shop, category: food, state: NY, gender: M, amount_bucket: MEDIUM, day_of_week: 1, transaction_hour: 0, is_fraud: 1}
+        - {transaction_id: c, merchant: shop, category: food, state: NY, gender: M, amount_bucket: MEDIUM, day_of_week: 1, transaction_hour: 1, is_fraud: null}
+        - {transaction_id: d, merchant: shop, category: food, state: NY, gender: M, amount_bucket: LARGE, day_of_week: 1, transaction_hour: 2, is_fraud: 0}
+  - name: fraud_rate_uses_only_known_labels
+    description: Неизвестные метки не входят в знаменатель fraud_rate.
+    model: mart_fraud_by_category
+    given:
+      - input: ref('stg_transactions')
+        rows:
+          - {category: food, amount: 10, is_fraud: 0}
+          - {category: food, amount: 20, is_fraud: 1}
+          - {category: food, amount: 30, is_fraud: null}
+          - {category: travel, amount: 40, is_fraud: null}
+    expect:
+      rows:
+        - {category: food, transaction_count: 3, labeled_count: 2, fraud_count: 1, fraud_rate: 50, total_amount: 60, fraud_amount: 20}
+        - {category: travel, transaction_count: 1, labeled_count: 0, fraud_count: 0, fraud_rate: null, total_amount: 40, fraud_amount: 0}
+  - name: customer_risk_thresholds
+    description: Границы HIGH/MEDIUM/LOW и клиент без известных меток.
+    model: mart_customer_risk_profile
+    given:
+      - input: ref('stg_transactions')
+        format: sql
+        rows: |
+          select
+              arrayJoin(['high', 'medium', 'low', 'unknown']) as customer_id,
+              toDateTime('2020-01-01 00:00:00') as transaction_time,
+              toDecimal64(10, 2) as amount,
+              if(customer_id = 'unknown', cast(null as Nullable(UInt8)),
+                 toNullable(toUInt8(number < multiIf(customer_id = 'high', 5, customer_id = 'medium', 1, 0)))) as is_fraud
+          from numbers(100)
+    expect:
+      rows:
+        - {customer_id: high, labeled_count: 100, fraud_count: 5, fraud_rate: 5, risk_level: HIGH}
+        - {customer_id: medium, labeled_count: 100, fraud_count: 1, fraud_rate: 1, risk_level: MEDIUM}
+        - {customer_id: low, labeled_count: 100, fraud_count: 0, fraud_rate: 0, risk_level: LOW}
+        - {customer_id: unknown, labeled_count: 0, fraud_count: 0, fraud_rate: null, risk_level: UNKNOWN}

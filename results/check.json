@@ -1,0 +1,28 @@
+{
+  "source": "https://www.kaggle.com/competitions/teta-ml-1-2025/data",
+  "files": [
+    {
+      "file": "train.csv",
+      "rows": 786431,
+      "sha256": "2fd291f0d66cbb1f3c3e442396f3725d4cbde650d5dd0c16322c5230d3776b99"
+    },
+    {
+      "file": "test.csv",
+      "rows": 262144,
+      "sha256": "4129db5d9079f907d9a38aefc170f5e105a650a8273457aaae02a1f735516eac"
+    }
+  ],
+  "transactions": 1048575,
+  "labeled": 786431,
+  "fraud": 4504,
+  "total_amount": "73692902.08",
+  "mart_rows": {
+    "mart_fraud_by_category": 14,
+    "mart_fraud_by_state": 51,
+    "mart_customer_risk_profile": 965,
+    "mart_hourly_fraud_pattern": 168,
+    "mart_merchant_analytics": 693,
+    "mart_daily_state_metrics": 21473
+  },
+  "status": "Все витрины совпали с независимым расчётом по CSV"
+}

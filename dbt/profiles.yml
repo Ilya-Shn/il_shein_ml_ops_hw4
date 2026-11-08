@@ -1,0 +1,14 @@
+fraud_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      host: "{{ env_var('CLICKHOUSE_HOST', 'clickhouse') }}"
+      port: 8123
+      user: fraud
+      password: fraud
+      schema: analytics
+      secure: false
+      threads: 2
+      connect_timeout: 10
+      send_receive_timeout: 300
